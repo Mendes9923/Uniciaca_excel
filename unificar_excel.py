@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import io
+import numpy as np
 
 st.set_page_config(page_title="LM Unificador de Excel", layout="centered")
 
@@ -8,7 +9,7 @@ st.set_page_config(page_title="LM Unificador de Excel", layout="centered")
 st.markdown(
     """
     <div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-bottom: 30px;'>
-        <h1 style='color: white; margin: 0; font-size: 2.5em;'>📊 LM micros saas</h1>
+        <h1 style='color: white; margin: 0; font-size: 2.5em;'>📊 LM10 Solutions</h1>
         <p style='color: white; margin: 5px 0 0 0; font-size: 1.1em;'>Unificador de Arquivos Excel</p>
     </div>
     """,
@@ -138,11 +139,25 @@ if uploaded_files:
             })
             metadata.to_excel(writer, index=False, sheet_name='Metadados')
             
-            # Ajustar largura das colunas automaticamente
+            # Ajustar largura das colunas automaticamente (VERSÃO CORRIGIDA)
             worksheet = writer.sheets['Consolidado']
             for i, col in enumerate(df_final.columns):
-                column_width = max(df_final[col].astype(str).map(len).max(), len(col)) + 2
-                worksheet.set_column(i, i, min(column_width, 50))
+                try:
+                    # Converter para string e lidar com valores nulos
+                    series_str = df_final[col].astype(str)
+                    # Substituir 'nan' por string vazia para não contar como largura
+                    series_str = series_str.replace('nan', '')
+                    # Calcular o comprimento máximo
+                    max_len = series_str.str.len().max()
+                    # Se não houver dados ou for NaN, usar o tamanho do cabeçalho
+                    if pd.isna(max_len) or max_len == 0:
+                        max_len = len(str(col))
+                    column_width = max(max_len, len(str(col))) + 2
+                    # Limitar a largura máxima
+                    worksheet.set_column(i, i, min(column_width, 50))
+                except Exception as e:
+                    # Em caso de erro, usar largura padrão
+                    worksheet.set_column(i, i, 15)
         
         # 🔽 Botão de download
         st.download_button(
@@ -181,7 +196,7 @@ st.markdown(
     """
     <hr style="margin-top:50px">
     <div style='text-align: center; color: grey; padding: 20px;'>
-        <strong>LM micros saas</strong> - Soluções em Software como Serviço<br>
+        <strong>LM10 Solutions</strong> - Soluções em Software como Serviço<br>
         Unificador de Excel - Versão Gratuita
     </div>
     """,
